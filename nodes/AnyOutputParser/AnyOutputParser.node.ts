@@ -1,12 +1,12 @@
 import type { INodeType, INodeTypeDescription, ISupplyDataFunctions } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
-// @ts-ignore - @langchain/core is provided by n8n at runtime
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports,import-x/no-unresolved
 import { BaseOutputParser } from '@langchain/core/output_parsers';
 
 /**
  * LangChain output parser that passes through any text without parsing
  */
-class AnyParser extends BaseOutputParser<string> {
+class AnyParser extends BaseOutputParser<{ output: string }> {
 	lc_namespace = ['n8n-nodes-ai-utils', 'AnyParser'];
 	async parse(text: string): Promise<{ output: string }> {
 		try {
@@ -39,6 +39,7 @@ export class AnyOutputParser implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Any Output Parser',
 		name: 'anyOutputParser',
+		// eslint-disable-next-line @n8n/community-nodes/icon-validation
 		icon: 'fa:code',
 		group: ['transform'],
 		version: 1,
@@ -52,10 +53,11 @@ export class AnyOutputParser implements INodeType {
 		outputs: [NodeConnectionTypes.AiOutputParser],
 		outputNames: ['Output Parser'],
 		properties: [],
+		usableAsTool: true,
 	};
 
 
-	async supplyData(this: ISupplyDataFunctions, itemIndex: number) {
+	async supplyData(this: ISupplyDataFunctions) {
 		const parser = new AnyParser();
 
 		return { response: parser };

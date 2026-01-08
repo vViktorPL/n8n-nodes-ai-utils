@@ -1,6 +1,11 @@
-import type { INodeType, INodeTypeDescription, ISupplyDataFunctions } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
-// @ts-ignore - @langchain/core is provided by n8n at runtime
+import {
+	INodeType,
+	INodeTypeDescription,
+	ISupplyDataFunctions,
+	NodeOperationError,
+	NodeConnectionTypes,
+} from 'n8n-workflow';
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports,import-x/no-unresolved
 import { BaseOutputParser } from '@langchain/core/output_parsers';
 
 interface ConditionalParserOptions {
@@ -41,7 +46,7 @@ class ConditionalParser extends BaseOutputParser<unknown> {
 	getSchema() {
 		const parser = this.getParser();
 		// Call getSchema if it exists on the parser
-		if (typeof parser.getSchema === 'function') {
+		if ('getSchema' in parser && typeof parser.getSchema === 'function') {
 			return parser.getSchema();
 		}
 	}
@@ -53,6 +58,7 @@ export class ConditionalOutputParser implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Conditional Output Parser',
 		name: 'conditionalOutputParser',
+		// eslint-disable-next-line @n8n/community-nodes/icon-validation
 		icon: 'fa:code-branch',
 		group: ['transform'],
 		version: 1,
@@ -79,9 +85,10 @@ export class ConditionalOutputParser implements INodeType {
 				name: 'useFirstParser',
 				type: 'boolean',
 				default: true,
-				description: 'If true use the first parser (Parser When True), otherwise use the second parser (Parser When False)',
+				description: 'Whether to use the first parser (true) or the second parser (false)',
 			},
 		],
+		usableAsTool: true,
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number) {
@@ -90,7 +97,7 @@ export class ConditionalOutputParser implements INodeType {
 		const [parserA, parserB] = await this.getInputConnectionData(NodeConnectionTypes.AiOutputParser, itemIndex) as BaseOutputParser<unknown>[];
 
 		if (!parserA || !parserB) {
-			throw new Error('Two parsers must be connected');
+			throw new NodeOperationError(this.getNode(), 'Two parsers must be connected');
 		}
 
 		const parser = new ConditionalParser({
